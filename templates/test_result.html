@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Результаты теста</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7fa; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.09); padding: 36px 32px 24px 32px; text-align: center; }
+        h1 { color: #222; }
+        .score { font-size: 32px; color: #007BFF; margin: 30px 0; }
+        .warning { color: #dc3545; font-size: 16px; margin: 20px 0; }
+        .button { background-color: #007BFF; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 20px; transition: background 0.2s; }
+        .button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Тест завершён!</h1>
+    <div class="score">Ваш результат: {{ score }} / {{ max_score }} баллов</div>
+    <div class="warning">Открытые вопросы оцениваются работодателем вручную и не включены в этот результат.</div>
+    <a href="{% url 'applicant_dashboard' %}" class="button">Вернуться на панель</a>
+</div>
+</body>
+</html>

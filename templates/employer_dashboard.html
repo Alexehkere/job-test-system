@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Панель работодателя</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+            padding: 36px 40px 32px 40px;
+            position: relative;
+            overflow: visible;
+        }
+        h1 {
+            color: #222;
+            margin-bottom: 28px;
+        }
+        form {
+            margin-bottom: 32px;
+        }
+        label { font-weight: bold; }
+        input[type="text"], select {
+            width: 100%;
+            padding: 9px;
+            margin: 7px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .custom-position {
+            display: none;
+            margin-top: 5px;
+        }
+        .button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 7px;
+            margin-bottom: 7px;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .logout-btn {
+            background-color: #dc3545;
+            float: right;
+        }
+        .logout-btn:hover {
+            background-color: #b52a37;
+        }
+        .test-list {
+            margin-top: 25px;
+        }
+        .test-item {
+            background: #f8fafc;
+            border-radius: 7px;
+            padding: 16px 22px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        }
+        .test-actions {
+            margin-top: 10px;
+        }
+        ul { padding-left: 18px; }
+        .search-filter {
+            margin-bottom: 20px;
+        }
+        .search-filter input[type="text"] {
+            width: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .search-filter select {
+            width: 20%;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        .chart-container {
+            width: 250px;
+            height: 200px;
+            position: absolute;
+            top: 50px;
+            right: -300px;
+            background: #fff;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            z-index: 10;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 18px 6px; }
+            .test-item { padding: 10px 6px; }
+            .search-filter input[type="text"] { width: 100%; margin-bottom: 10px; }
+            .search-filter select { width: 100%; margin-bottom: 10px; }
+            .chart-container { display: none; }
+        }
+
+        /* Стильный список соискателей слева */
+        .applicant-container {
+            width: 250px;
+            height: 400px;
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            background: #ffffff; /* Светлый фон */
+            border: 2px solid #007bff; /* Синяя рамка */
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Лёгкая тень для выделения */
+            padding: 15px;
+            color: #333; /* Тёмный текст для читаемости */
+            z-index: 10;
+            overflow-y: auto;
+        }
+        .applicant-container h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #007bff; /* Синий заголовок */
+        }
+        .applicant-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9; /* Очень светлый фон для элементов */
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .applicant-item:hover {
+            background: #e6f0fa; /* Лёгкий синий оттенок при наведении */
+            transform: translateX(5px);
+        }
+        .applicant-avatar {
+            width: 40px;
+            height: 40px;
+            background: #4682b4;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 18px;
+            color: #fff;
+        }
+        .applicant-avatar::before {
+            content: "👤";
+        }
+        .applicant-info {
+            flex-grow: 1;
+            font-size: 14px;
+        }
+        .applicant-info span {
+            display: block;
+            font-weight: bold;
+            color: #222; /* Тёмный заголовок */
+        }
+        .applicant-info small {
+            color: #555; /* Серый текст для деталей */
+        }
+        .status-light {
+            width: 10px;
+            height: 10px;
+            background: #2ecc71;
+            border-radius: 50%;
+            margin-left: 10px;
+            transition: opacity 0.3s;
+        }
+        .status-light.inactive {
+            background: #e74c3c;
+            opacity: 0.5;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const positionSelect = document.querySelector('select[name="position"]');
+            const customPositionInput = document.querySelector('.custom-position input');
+            positionSelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    customPositionInput.style.display = 'block';
+                    customPositionInput.required = true;
+                } else {
+                    customPositionInput.style.display = 'none';
+                    customPositionInput.required = false;
+                    customPositionInput.value = '';
+                }
+            });
+
+            // Отрисовка бар-чарта (можно закомментировать, если не нужно)
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            const statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: {{ stats.labels|safe }},
+                    datasets: [{
+                        label: 'Количество/Средний балл',
+                        data: {{ stats.data|safe }},
+                        backgroundColor: {{ stats.backgroundColor|safe }},
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Значение' }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Статистика тестов' }
+                    }
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <form action="{% url 'logout' %}" method="post" style="float: right; margin-top: -10px;">
+            {% csrf_token %}
+            <button type="submit" class="button logout-btn">Выйти</button>
+        </form>
+        <h1>Панель работодателя</h1>
+        <a href="{% url 'employer_reports' %}" class="button" style="background:#17a2b8;">Отчётность по тестам</a>
+        <form method="post" autocomplete="off">
+            {% csrf_token %}
+            <label>Название теста:</label>
+            <input type="text" name="title" placeholder="Название теста" required>
+            <label>Категория:</label>
+            <select name="category" required>
+                <option value="">Выбери категорию</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <label>Должность:</label>
+            <select name="position" required>
+                <option value="">Выбери должность</option>
+                <option value="developer">Разработчик</option>
+                <option value="manager">Менеджер</option>
+                <option value="designer">Дизайнер</option>
+                <option value="analyst">Аналитик</option>
+                <option value="other">Другое</option>
+            </select>
+            <div class="custom-position">
+                <input type="text" name="custom_position" placeholder="Введите свою должность">
+            </div>
+            <button type="submit" class="button">Создать тест</button>
+        </form>
+
+        <!-- Форма поиска и фильтрации -->
+        <div class="search-filter">
+            <form method="GET" action="">
+                <input type="text" name="q" placeholder="Поиск по названию теста" value="{{ request.GET.q }}">
+                <select name="category_filter">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category_filter == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="position_filter">
+                    <option value="">Все должности</option>
+                    <option value="developer" {% if request.GET.position_filter == "developer" %}selected{% endif %}>Разработчик</option>
+                    <option value="manager" {% if request.GET.position_filter == "manager" %}selected{% endif %}>Менеджер</option>
+                    <option value="designer" {% if request.GET.position_filter == "designer" %}selected{% endif %}>Дизайнер</option>
+                    <option value="analyst" {% if request.GET.position_filter == "analyst" %}selected{% endif %}>Аналитик</option>
+                    <option value="other" {% if request.GET.position_filter == "other" %}selected{% endif %}>Другое</option>
+                </select>
+                <button type="submit" class="button" style="background:#28a745; margin-left: 10px;">Фильтровать</button>
+            </form>
+        </div>
+
+        <h2>Твои тесты</h2>
+        <div class="test-list">
+            {% for test in tests %}
+                <div class="test-item">
+                    <strong>{{ test.title }}</strong>
+                    <span style="color:#888;">({{ test.category.name|default:"Без категории" }})</span>
+                    <div class="test-actions">
+                        <a href="{% url 'edit_test' test.id %}" class="button">Редактировать ✏️</a>
+                        <a href="{% url 'delete_test' test.id %}" class="button" style="background:#ffc107; color:#222;">Удалить 🗑️</a>
+                        <a href="{% url 'create_question' test.id %}" class="button" style="background:#28a745;">Добавить вопрос ➕</a>
+                        <a href="{% url 'assign_test' test.id %}" class="button" style="background:#17a2b8;">Назначить 📩</a>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="test-item">Тестов нет.</div>
+            {% endfor %}
+        </div>
+        <div style="clear: both;"></div>
+
+        <!-- Бар-чарт (можно убрать, если не нужен) -->
+        <div class="chart-container">
+            <canvas id="statsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Список соискателей слева -->
+    <div class="applicant-container">
+        <h3>Соискатели</h3>
+        {% if applicants %}
+            {% for applicant in applicants %}
+                <div class="applicant-item">
+                    <div class="applicant-avatar"></div>
+                    <div class="applicant-info">
+                        <span>{{ applicant.username }}</span>
+                        <small>{{ applicant.first_name }} {{ applicant.last_name }} {% if applicant.position %} - {{ applicant.position }}{% else %}- Должность не указана{% endif %}</small>
+                    </div>
+                    <div class="status-light {% if not applicant.is_active %}inactive{% endif %}"></div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="text-align: center; color: #ddd;">Нет соискателей.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

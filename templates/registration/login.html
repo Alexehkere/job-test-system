@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Вход или регистрация</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .center-box {
+            background: #fff;
+            max-width: 400px;
+            margin: 60px auto 0 auto;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+            padding: 36px 32px 24px 32px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 24px;
+            color: #222;
+        }
+        .button, .link-btn {
+            display: block;
+            width: 100%;
+            background-color: #007BFF;
+            color: white;
+            padding: 12px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+            text-decoration: none;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .button:hover, .link-btn:hover {
+            background-color: #0056b3;
+        }
+        .errorlist {
+            color: #d8000c;
+            background: #ffd2d2;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .links {
+            margin-top: 18px;
+            text-align: center;
+        }
+        .links a {
+            color: #007BFF;
+            text-decoration: none;
+            margin: 0 8px;
+            font-size: 15px;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .divider {
+            margin: 22px 0 12px 0;
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type=text], input[type=password] {
+            width: 100%;
+            padding: 9px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="center-box">
+        <h1>Вход в систему</h1>
+        {% if form.errors %}
+            <div class="errorlist">Неверное имя пользователя или пароль.</div>
+        {% endif %}
+        <form method="post" autocomplete="on">
+            {% csrf_token %}
+            {{ form.username.label_tag }}<br>
+            {{ form.username }}
+            {{ form.password.label_tag }}<br>
+            {{ form.password }}
+            <button type="submit" class="button">Войти</button>
+        </form>
+        <div class="links">
+            <a href="{% url 'password_reset' %}">Забыли пароль?</a>
+            <a href="{% url 'admin:login' %}">Вход для администратора</a>
+        </div>
+        <div class="divider">или</div>
+        <a href="{% url 'register_applicant' %}" class="link-btn" style="background:#28a745;">Регистрация соискателя</a>
+        <a href="{% url 'register_employer' %}" class="link-btn" style="background:#ffc107; color:#222;">Регистрация работодателя</a>
+        <a href="{% url 'company_register' %}" class="link-btn" style="background:#17a2b8;">Регистрация компании</a>
+    </div>
+</body>
+</html>

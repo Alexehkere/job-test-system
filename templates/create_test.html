@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Создать тест</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7fa; }
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+            padding: 36px 32px 24px 32px;
+        }
+        h1 { text-align: center; color: #222; }
+        label { font-weight: bold; }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 9px;
+            margin: 7px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+        .button:hover { background-color: #0056b3; }
+        .back-btn { background: #6c757d; }
+        .back-btn:hover { background: #495057; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Создать тест</h1>
+        <form method="post">
+            {% csrf_token %}
+            <label>Название теста:</label>
+            <input type="text" name="title" placeholder="Название теста" required>
+            <label>Категория:</label>
+            <select name="category" required>
+                <option value="">Выбери категорию</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <label>Лимит времени (минуты):</label>
+            <input type="number" name="time_limit" placeholder="Лимит времени (минуты)" min="1" required>
+            <button type="submit" class="button">Создать</button>
+        </form>
+        <a href="{% url 'employer_dashboard' %}" class="button back-btn">Назад</a>
+    </div>
+</body>
+</html>

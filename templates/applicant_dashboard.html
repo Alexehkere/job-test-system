@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Панель соискателя</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #e3f2fd, #f8f9fa);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            overflow: visible;
+            position: relative;
+        }
+        h1 {
+            text-align: center;
+            color: #222;
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            position: relative;
+        }
+        .logout-form {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+        }
+        h2 {
+            color: #222;
+            margin: 15px 0 10px;
+            font-size: 20px;
+        }
+        .section {
+            margin-bottom: 25px;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 15px;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .profile p, .tests p, .completed-tests p {
+            margin: 5px 0;
+            color: #333;
+        }
+        .profile p strong {
+            color: #0056b3;
+            font-weight: bold;
+        }
+        .notification {
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            display: none;
+        }
+        .notification.unread {
+            background: #e9ecef;
+            border-left: 4px solid #007bff;
+        }
+        .notification p {
+            margin: 0;
+            color: #333;
+        }
+        .test-item, .completed-test-item {
+            padding: 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .test-item a, .completed-test-item a {
+            margin-top: 5px;
+            display: inline-block;
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .logout-button {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 15px;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+        .notification-toggle {
+            background-color: #ffc107;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.3s;
+            display: block;
+            margin: 10px auto;
+        }
+        .notification-toggle:hover {
+            background-color: #e0a800;
+        }
+        .warning {
+            color: #dc3545;
+            font-size: 16px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-accepted {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-rejected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .status-pending {
+            color: #6c757d;
+        }
+        .bell {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 12px solid #ffc107;
+            position: relative;
+            margin-right: 5px;
+        }
+        .bell::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: -6px;
+            width: 12px;
+            height: 6px;
+            background: #ffc107;
+            border-radius: 0 0 3px 3px;
+        }
+        .chart-container {
+            width: 300px;
+            height: 300px;
+            position: absolute;
+            top: 50px;
+            right: -350px;
+            background: #ffffff;
+            border: 2px solid #007bff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            z-index: 10;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            .chart-container { display: none; }
+            .logout-form { top: 10px; right: 15px; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.querySelector('.notification-toggle');
+            const notifications = document.querySelectorAll('.notification');
+            toggleButton.addEventListener('click', function() {
+                notifications.forEach(notif => {
+                    notif.style.display = notif.style.display === 'block' ? 'none' : 'block';
+                });
+                toggleButton.textContent = notifications[0].style.display === 'block' ? 'Скрыть уведомления' : 'Показать уведомления' + ({{ unread_count|default:0 }} > 0 ? ' (' + {{ unread_count }} + ' новых)' : '');
+            });
+
+            // Отрисовка круговой диаграммы
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            const statsChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: {{ stats.labels|safe }},
+                    datasets: [{
+                        data: {{ stats.data|safe }},
+                        backgroundColor: {{ stats.backgroundColor|safe }},
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#333'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Статистика результатов',
+                            color: '#222',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="container">
+    <h1>Панель <em>соискателя</em></h1>
+    <div class="logout-form">
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Выйти</button>
+        </form>
+    </div>
+
+    <!-- Профиль с обновлённым дизайном -->
+    <div class="section profile">
+        <h2>Ваш <strong>профиль</strong></h2>
+        <p><strong>Имя:</strong> <em>{{ profile.first_name|default:"Не указано" }} {{ profile.last_name|default:"Не указано" }}</em></p>
+        <p><strong>Имя пользователя:</strong> <em>{{ profile.username }}</em></p>
+        <p><strong>Email:</strong> <em>{{ profile.email }}</em></p>
+        <p><strong>Должность:</strong> <em>{{ profile.position }}</em></p>
+        <p><strong>Компания:</strong> <em>{{ profile.company }}</em></p>
+        <p><strong>Статус аккаунта:</strong> {% if profile.is_active %}<span style="color: #28a745;">Активен</span>{% else %}<span style="color: #dc3545;">Заблокирован</span>{% endif %}</p>
+    </div>
+
+    <!-- Кнопка и уведомления -->
+    <div class="section">
+        <button class="notification-toggle">
+            <span class="bell"></span>
+            Показать уведомления {% if unread_count %}({{ unread_count }} новых){% endif %}
+        </button>
+        {% if notifications %}
+            {% for notification in notifications %}
+                <div class="notification {% if not notification.is_read %}unread{% endif %}">
+                    <p>{{ notification.message }} (<em>{{ notification.created_at|date:"d.m.Y H:i" }}</em>)</p>
+                    {% if not notification.is_read %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                            <button type="submit" name="mark_read" class="button">Отметить</button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="warning">Уведомлений нет.</p>
+        {% endif %}
+    </div>
+
+    <!-- Активные тесты -->
+    <div class="section tests">
+        <h2><strong>Назначенные тесты</strong></h2>
+        {% if active_assignments %}
+            {% for assignment in active_assignments %}
+                <div class="test-item">
+                    <p><strong>Тест:</strong> <em>{{ assignment.test.title }}</em></p>
+                    <p><strong>Статус:</strong> Ожидает прохождения</p>
+                    <a href="{% url 'take_test' assignment.id %}" class="button">Пройти</a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="warning">Нет назначенных тестов.</p>
+        {% endif %}
+    </div>
+
+    <!-- Завершённые тесты -->
+    <div class="section completed-tests">
+        <h2><strong>Завершённые тесты</strong></h2>
+        {% if completed_assignments %}
+            {% for assignment in completed_assignments %}
+                <div class="completed-test-item">
+                    <p><strong>Тест:</strong> <em>{{ assignment.test.title }}</em></p>
+                    <p><strong>Статус:</strong>
+                        {% if assignment.is_accepted %}<span class="status-accepted">Принят</span>
+                        {% elif assignment.is_rejected %}<span class="status-rejected">Отклонён</span>
+                        {% else %}<span class="status-pending">Ожидает проверки</span>{% endif %}
+                    </p>
+                    <a href="{% url 'test_result' assignment.id %}" class="button">Результаты</a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="warning">Вы пока не завершили ни одного теста.</p>
+        {% endif %}
+    </div>
+
+    <!-- Круговая диаграмма -->
+    <div class="chart-container">
+        <canvas id="statsChart"></canvas>
+    </div>
+</div>
+</body>
+</html>

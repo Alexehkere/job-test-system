@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Редактировать тест</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7fa; margin: 0; padding: 0; }
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+            padding: 36px 32px 24px 32px;
+            position: relative;
+        }
+        h1 { text-align: center; color: #222; }
+        label { font-weight: bold; }
+        input[type="text"], select {
+            width: 100%;
+            padding: 9px;
+            margin: 7px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .button:hover { background-color: #0056b3; }
+        .back-btn {
+            background: #6c757d;
+            position: absolute;
+            right: 32px;
+            top: 36px;
+            margin-top: 0;
+        }
+        .back-btn:hover { background: #495057; }
+        .question-list { margin-top: 30px; }
+        .question-item {
+            background: #f8fafc;
+            border-radius: 7px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        }
+        .question-actions { margin-top: 8px; }
+        .question-actions a {
+            margin-right: 10px;
+        }
+        .add-question-btn {
+            margin-top: 20px;
+            background: #28a745;
+        }
+        .add-question-btn:hover {
+            background: #218838;
+        }
+        @media (max-width: 700px) {
+            .container { padding: 12px 2vw; }
+            .back-btn { right: 2vw; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'employer_dashboard' %}" class="button back-btn">Назад</a>
+        <h1>Редактировать тест</h1>
+        <form method="post">
+            {% csrf_token %}
+            <label>Название теста:</label>
+            <input type="text" name="title" value="{{ test.title }}" required>
+            <label>Категория:</label>
+            <select name="category" required>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if test.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="button">Сохранить</button>
+        </form>
+
+        <div class="question-list">
+            <h2>Вопросы теста</h2>
+            {% for question in questions %}
+                <div class="question-item">
+                    <strong>{{ forloop.counter }}. {{ question.text|truncatechars:80 }}</strong>
+                    <div class="question-actions">
+                        <a href="{% url 'edit_question' question.id %}" class="button" style="background:#28a745;">Редактировать</a>
+                        <a href="{% url 'delete_question' question.id %}" class="button" style="background:#dc3545;">Удалить</a>
+                    </div>
+                </div>
+            {% empty %}
+                <div>Вопросов пока нет.</div>
+            {% endfor %}
+            <a href="{% url 'create_question' test.id %}" class="button add-question-btn">Добавить вопрос</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Назначить тест</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7fa; }
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+            padding: 36px 32px 24px 32px;
+            position: relative;
+        }
+        h1 { text-align: center; color: #222; }
+        label { font-weight: bold; }
+        select {
+            width: 100%;
+            padding: 9px;
+            margin: 7px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+        .button:hover { background-color: #0056b3; }
+        .back-btn { background: #6c757d; }
+        .back-btn:hover { background: #495057; }
+        .warning {
+            color: #dc3545;
+            font-size: 16px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        /* Стильный блок соискателей */
+        .applicant-list {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .applicant-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .applicant-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .applicant-info {
+            font-size: 14px;
+            color: #333;
+        }
+        .applicant-status {
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: #fff;
+        }
+        .status-active { background-color: #28a745; }
+        .status-inactive { background-color: #dc3545; }
+        .applicant-tests { color: #6c757d; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Назначить тест: "{{ test.title }}"</h1>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="warning">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% if applicants.exists %}
+            <form method="post">
+                {% csrf_token %}
+                <label for="applicant">Выберите соискателя:</label>
+                <select name="applicant" id="applicant" required>
+                    <option value="">-- Выбрать --</option>
+                    {% for applicant in applicants %}
+                        <option value="{{ applicant.username }}">{{ applicant.username }} {% if applicant.position %}({{ applicant.position }}){% else %}(Должность не указана){% endif %}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="button">Назначить</button>
+            </form>
+        {% else %}
+            <div class="warning">В вашей компании нет зарегистрированных соискателей.</div>
+        {% endif %}
+        <a href="{% url 'employer_dashboard' %}" class="button back-btn">Назад</a>
+
+        <!-- Стильный список соискателей -->
+        <div class="applicant-list">
+            <h3 style="color: #222; margin-bottom: 15px;">Соискатели компании</h3>
+            {% for applicant in applicants %}
+                <div class="applicant-item">
+                    <div class="applicant-info">
+                        {{ applicant.username }} {% if applicant.position %}({{ applicant.position }}){% else %}(Должность не указана){% endif %}
+                    </div>
+                    <div class="applicant-status {% if applicant.is_active %}status-active{% else %}status-inactive{% endif %}">
+                        {% if applicant.is_active %}Активен{% else %}Неактивен{% endif %}
+                    </div>
+                    <div class="applicant-tests">
+                        Назначено тестов: {{ applicant.testassignment_set.count }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

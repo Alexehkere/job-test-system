@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f4f7fa 0%, #e0e7ff 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 35px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        h1, h2 {
+            color: #1a2e5b;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h1::before {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 4px;
+            background: #007bff;
+            top: 60px;
+            left: 35px;
+        }
+        .btn-custom {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        .btn-approve {
+            background-color: #28a745;
+            border: none;
+        }
+        .btn-reject, .btn-delete {
+            background-color: #dc3545;
+            border: none;
+        }
+        .btn-block {
+            background-color: #ffc107;
+            border: none;
+        }
+        .btn-unblock {
+            background-color: #17a2b8;
+            border: none;
+        }
+        .btn-invite {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            border: none;
+        }
+        .btn-custom:hover {
+            filter: brightness(110%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .table {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .table th {
+            background: #f8f9fa;
+            color: #1a2e5b;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table td {
+            vertical-align: middle;
+            transition: all 0.3s ease;
+        }
+        .table tbody tr:hover {
+            background: #f1f3f5;
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-pending { background: #ffc107; }
+        .status-approved { background: #28a745; }
+        .status-blocked { background: #dc3545; }
+        .alert {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .logout-btn {
+            background: linear-gradient(90deg, #ff6b6b, #ff4d4d);
+            border: none;
+        }
+        .logout-btn:hover {
+            background: linear-gradient(90deg, #ff4d4d, #e60000);
+        }
+        .date-filter {
+            margin-bottom: 20px;
+        }
+        .date-filter input {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 20px auto;
+            }
+            .btn-custom {
+                font-size: 12px;
+                padding: 8px 15px;
+            }
+            h1::before {
+                top: 55px;
+                left: 20px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <form action="{% url 'logout' %}" method="post" style="float: right;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-custom logout-btn">Выйти</button>
+        </form>
+        <h1>Управление пользователями: {{ user.company.name }}</h1>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Фильтр по дате -->
+        <div class="date-filter">
+            <form method="GET" action="">
+                <input type="date" name="date_filter" value="{{ date_filter }}" class="form-control" style="display: inline-block; width: 200px;">
+                <button type="submit" class="btn btn-custom btn-invite" style="margin-left: 10px;">Фильтровать</button>
+            </form>
+        </div>
+
+        <!-- Журнал действий -->
+        <h2>Журнал действий</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>Действие</th>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employer in pending_employers %}
+                    <tr>
+                        <td>{{ employer.username }}</td>
+                        <td>Заявка подана</td>
+                        <td>{{ employer.date_joined|date:"d.m.Y H:i" }}</td>
+                        <td><span class="status-indicator status-pending"></span>Ожидает</td>
+                    </tr>
+                {% empty %}
+                    <!-- Пустой блок для pending_employers не нужен, обрабатываем ниже -->
+                {% endfor %}
+                {% for employer in approved_employers %}
+                    <tr>
+                        <td>{{ employer.username }}</td>
+                        <td>Одобрен</td>
+                        <td>{{ employer.date_joined|date:"d.m.Y H:i" }}</td>
+                        <td><span class="status-indicator status-approved"></span>Активен</td>
+                    </tr>
+                {% empty %}
+                    <!-- Пустой блок для approved_employers не нужен -->
+                {% endfor %}
+                {% for employer in blocked_employers %}
+                    <tr>
+                        <td>{{ employer.username }}</td>
+                        <td>Заблокирован</td>
+                        <td>{{ employer.date_joined|date:"d.m.Y H:i" }}</td>
+                        <td><span class="status-indicator status-blocked"></span>Заблокирован</td>
+                    </tr>
+                {% empty %}
+                    <!-- Пустой блок для blocked_employers не нужен -->
+                {% endfor %}
+                {% for invitation in invitations %}
+                    <tr>
+                        <td>{{ invitation.email }}</td>
+                        <td>Приглашение отправлено</td>
+                        <td>{{ invitation.created_at|date:"d.m.Y H:i" }}</td>
+                        <td><span class="status-indicator status-pending"></span>Ожидает</td>
+                    </tr>
+                {% empty %}
+                    <!-- Пустой блок для invitations не нужен -->
+                {% endfor %}
+                {% if not pending_employers and not approved_employers and not blocked_employers and not invitations %}
+                    <tr>
+                        <td colspan="4">Нет действий.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Кнопка для приглашения -->
+        <a href="{% url 'invite_applicant' %}" class="btn btn-custom btn-invite mb-4">Пригласить соискателя</a>
+
+        <!-- Заявки работодателей (для действий) -->
+        <h2>Заявки работодателей</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Имя пользователя</th>
+                    <th>Email</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employer in pending_employers %}
+                    <tr>
+                        <td>{{ employer.username }}</td>
+                        <td>{{ employer.email }}</td>
+                        <td>
+                            <form method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ employer.id }}">
+                                <input type="hidden" name="action" value="approve_employer">
+                                <button type="submit" class="btn btn-custom btn-approve">Одобрить</button>
+                            </form>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Отклонить заявку {{ employer.username }}?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ employer.id }}">
+                                <input type="hidden" name="action" value="reject_employer">
+                                <button type="submit" class="btn btn-custom btn-reject">Отклонить</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3">Заявок от работодателей нет.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Одобренные работодатели -->
+        <h2>Одобренные работодатели</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Имя пользователя</th>
+                    <th>Email</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employer in approved_employers %}
+                    <tr>
+                        <td>{{ employer.username }}</td>
+                        <td>{{ employer.email }}</td>
+                        <td>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Заблокировать {{ employer.username }}?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ employer.id }}">
+                                <input type="hidden" name="action" value="block_employer">
+                                <button type="submit" class="btn btn-custom btn-block">Заблокировать</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3">Одобренных работодателей нет.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Заблокированные работодатели -->
+        <h2>Заблокированные работодатели</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Имя пользователя</th>
+                    <th>Email</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employer in blocked_employers %}
+                    <tr>
+                        <td>{{ employer.username }}</td>
+                        <td>{{ employer.email }}</td>
+                        <td>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Разблокировать {{ employer.username }}?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ employer.id }}">
+                                <input type="hidden" name="action" value="unblock_employer">
+                                <button type="submit" class="btn btn-custom btn-unblock">Разблокировать</button>
+                            </form>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Удалить {{ employer.username }}? Это действие необратимо.');">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ employer.id }}">
+                                <input type="hidden" name="action" value="delete_employer">
+                                <button type="submit" class="btn btn-custom btn-delete">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3">Заблокированных работодателей нет.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Приглашения -->
+        <h2>Отправленные приглашения</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Дата отправки</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invitation in invitations %}
+                    <tr>
+                        <td>{{ invitation.email }}</td>
+                        <td>{{ invitation.created_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="2">Приглашений нет.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

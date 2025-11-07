@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Удалить вопрос</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7fa; }
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+            padding: 36px 32px 24px 32px;
+            text-align: center;
+        }
+        h1 { color: #d9534f; }
+        .button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .button:hover { background-color: #0056b3; }
+        .danger { background: #dc3545; }
+        .danger:hover { background: #b52a37; }
+        .back-btn { background: #6c757d; }
+        .back-btn:hover { background: #495057; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Удалить вопрос</h1>
+        <p>Вы уверены, что хотите удалить этот вопрос?</p>
+        <p style="font-style: italic; color: #555;">"{{ question.text|truncatechars:80 }}"</p>
+        <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="button danger">Да, удалить</button>
+        </form>
+        <a href="{% url 'edit_test' question.test.id %}" class="button back-btn">Отмена</a>
+    </div>
+</body>
+</html>

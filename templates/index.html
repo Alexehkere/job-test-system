@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Добро пожаловать</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .button { background-color: #007BFF; color: white; padding: 12px 26px; border: none; cursor: pointer; margin: 10px; }
+        .button:hover { background-color: #0056b3; }
+        .container { max-width: 400px; margin: 0 auto; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Добро пожаловать в систему тестирования</h1>
+        <p>Выберите действие:</p>
+        <a href="{% url 'login' %}" class="button">Войти</a>
+        <a href="{% url 'register_applicant' %}" class="button">Регистрация соискателя</a>
+        <a href="{% url 'register_employer' %}" class="button">Регистрация работодателя</a>
+    </div>
+</body>
+</html>

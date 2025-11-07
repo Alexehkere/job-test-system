@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Пройти тест</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7fa; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.09); padding: 36px 32px 24px 32px; }
+        h1 { text-align: center; color: #222; }
+        .question-block { margin-bottom: 30px; }
+        .button { background-color: #007BFF; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; transition: background 0.2s; }
+        .button:hover { background-color: #0056b3; }
+        .timer { color: #dc3545; font-weight: bold; }
+        .option-row { margin-bottom: 8px; }
+        textarea { width: 100%; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; padding: 8px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Тест: {{ assignment.test.title }}</h1>
+    {% if current_question %}
+        <div class="question-block">
+            <strong>Вопрос:</strong> {{ current_question.text }}
+            <div class="timer">Осталось времени: <span id="time">{{ current_question.time_per_question }}</span> сек.</div>
+            <form id="answerForm">
+                {% if has_options %}
+                    {% if is_multiple %}
+                        {# Чекбоксы #}
+                        {% for option in options %}
+                            <div class="option-row">
+                                <input type="checkbox" name="option" value="{{ option.id }}" id="opt{{ option.id }}">
+                                <label for="opt{{ option.id }}">{{ option.text }}</label>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        {# Радио #}
+                        {% for option in options %}
+                            <div class="option-row">
+                                <input type="radio" name="option" value="{{ option.id }}" id="opt{{ option.id }}">
+                                <label for="opt{{ option.id }}">{{ option.text }}</label>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% else %}
+                    <textarea id="answer_text" name="answer_text" rows="4" placeholder="Введите ваш ответ"></textarea>
+                {% endif %}
+                <button type="submit" class="button">Ответить</button>
+            </form>
+        </div>
+    {% else %}
+        <h2>Тест завершён!</h2>
+        <a href="{% url 'test_result' assignment.id %}" class="button">Посмотреть результат</a>
+    {% endif %}
+</div>
+<script>
+    {% if current_question %}
+    let time = {{ current_question.time_per_question }};
+    let timer = setInterval(() => {
+        time--;
+        document.getElementById('time').textContent = time;
+        if (time <= 0) {
+            clearInterval(timer);
+            submitAnswer();
+        }
+    }, 1000);
+
+    function submitAnswer() {
+        let data = { question_id: {{ current_question.id }}, time_taken: {{ current_question.time_per_question }} - time };
+        let options = document.querySelectorAll('input[name="option"]');
+        {% if is_multiple %}
+            let selected = Array.from(options).filter(cb => cb.checked).map(cb => cb.value);
+            data.selected_option_ids = selected;
+        {% else %}
+            let selected = document.querySelector('input[name="option"]:checked');
+            data.selected_option_id = selected ? selected.value : null;
+        {% endif %}
+        if (options.length === 0) {
+            data.answer_text = document.getElementById('answer_text').value;
+        }
+        fetch(`{% url 'take_test' assignment.id %}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify(data)
+        }).then(response => response.json()).then(data => {
+            if (data.status === 'timeout') alert('Время вышло!');
+            location.reload();
+        });
+    }
+
+    document.getElementById('answerForm').onsubmit = function(e) {
+        e.preventDefault();
+        submitAnswer();
+    };
+    {% endif %}
+</script>
+</body>
+</html>

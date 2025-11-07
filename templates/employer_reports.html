@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Отчётность по тестам</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e0e7ff 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            padding: 36px 40px 32px 40px;
+            position: relative;
+            overflow: visible;
+            border: 1px solid rgba(0, 123, 255, 0.2);
+        }
+        h1 {
+            color: #1a3c6e;
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #007bff;
+            position: relative;
+        }
+        h1::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 4px;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            bottom: -3px;
+            left: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 30px;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #e9ecef;
+            padding: 12px;
+            vertical-align: middle;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(90deg, #f7f7f7, #e9ecef);
+            color: #1a3c6e;
+            font-weight: 600;
+        }
+        td {
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        tr:hover td {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+        .answers-table {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .accepted-label { color: #28a745; font-weight: 600; }
+        .rejected-label { color: #dc3545; font-weight: 600; }
+        .pending-label { color: #6c757d; }
+        .accept-form, .reject-form, .delete-form, .manual-score-form {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .button {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            color: white;
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
+            filter: brightness(110%);
+        }
+        .reject-button {
+            background: linear-gradient(90deg, #dc3545, #c82333);
+        }
+        .reject-button:hover {
+            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4);
+        }
+        .delete-button {
+            background: linear-gradient(90deg, #dc3545, #c82333);
+        }
+        .delete-button:hover {
+            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4);
+        }
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #6c757d, #5a6268);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(108, 117, 125, 0.3);
+        }
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(108, 117, 125, 0.4);
+            filter: brightness(110%);
+        }
+        .manual-score-input {
+            width: 70px;
+            padding: 6px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        .chart-container {
+            width: 220px;
+            height: 220px;
+            position: absolute;
+            top: 50px;
+            right: -350px; /* Ещё дальше, чтобы точно не касалось */
+            background: linear-gradient(135deg, #ffffff, #e9ecef);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 15px rgba(0, 123, 255, 0.1);
+            padding: 15px;
+            z-index: 10;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @media (max-width: 600px) {
+            .container { padding: 15px; margin: 20px auto; }
+            .chart-container { display: none; }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: {{ chart_data.labels|safe }},
+                    datasets: [{
+                        data: {{ chart_data.data|safe }},
+                        backgroundColor: {{ chart_data.backgroundColor|safe }},
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 12 } } },
+                        title: { display: true, text: 'Статус тестов', font: { size: 16, weight: 'bold' } }
+                    }
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="container">
+    <a href="{% url 'employer_dashboard' %}" class="back-button">← Вернуться в панель работодателя</a>
+    <h1>Отчётность по пройденным тестам</h1>
+    {% for item in assignment_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Тест</th>
+                    <th>Соискатель</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ item.assignment.test.title }}</td>
+                    <td>{{ item.assignment.applicant.username }}</td>
+                    <td>
+                        {% if item.assignment.is_accepted %}
+                            <span class="accepted-label">Принят</span>
+                        {% elif item.assignment.is_rejected %}
+                            <span class="rejected-label">Отклонён</span>
+                        {% else %}
+                            <span class="pending-label">Ожидает</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post" class="accept-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="assignment_id" value="{{ item.assignment.id }}">
+                            {% if not item.assignment.is_accepted and not item.assignment.is_rejected %}
+                                <button type="submit" name="is_accepted" value="on" class="button">Принять</button>
+                            {% endif %}
+                        </form>
+                        <form method="post" class="reject-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="assignment_id" value="{{ item.assignment.id }}">
+                            {% if not item.assignment.is_rejected and not item.assignment.is_accepted %}
+                                <button type="submit" name="is_rejected" value="on" class="button reject-button">Отклонить</button>
+                            {% endif %}
+                        </form>
+                        <form method="post" class="delete-form" onsubmit="return confirm('Удалить этот результат?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_assignment_id" value="{{ item.assignment.id }}">
+                            <button type="submit" class="button delete-button">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <strong>Ответы:</strong>
+            <table class="answers-table">
+                <thead>
+                    <tr>
+                        <th>Вопрос</th>
+                        <th>Ответ</th>
+                        <th>Баллы</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for ans in item.answers %}
+                    <tr>
+                        <td>{{ ans.answer.question.text }}</td>
+                        <td>
+                            {% for text in ans.selected_text %}
+                                <div>{{ text }}</div>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if ans.answer.question.question_type == 'open' %}
+                                <form method="post" class="manual-score-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="answer_id" value="{{ ans.answer.id }}">
+                                    <input type="number" name="manual_score" value="{{ ans.answer.manual_points }}" min="0" max="{{ ans.answer.question.points }}" class="manual-score-input">
+                                    <button type="submit" class="button">Сохранить</button>
+                                </form>
+                            {% else %}
+                                {{ ans.score }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% empty %}
+        <div>Пока никто не прошёл ваши тесты.</div>
+    {% endfor %}
+
+    <!-- Круговая диаграмма -->
+    <div class="chart-container">
+        <canvas id="statusChart"></canvas>
+    </div>
+</div>
+</body>
+</html>

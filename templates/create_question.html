@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Создать вопрос</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7fa; margin: 0; padding: 0; }
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+            padding: 36px 32px 24px 32px;
+        }
+        h1 { text-align: center; color: #222; }
+        label { font-weight: bold; }
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%;
+            padding: 9px;
+            margin: 7px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+        .button:hover { background-color: #0056b3; }
+        .option-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .option-row input[type="text"] { flex: 1; margin-right: 8px; }
+        .remove-btn {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .remove-btn:hover { background: #b52a37; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Создать вопрос для "{{ test.title }}"</h1>
+        <form id="questionForm">
+            <label>Текст вопроса:</label>
+            <textarea name="text" required rows="3"></textarea>
+
+            <label>Время на вопрос (сек):</label>
+            <input type="number" name="time_per_question" value="60" min="5" required>
+
+            <label>Категория:</label>
+            <select name="category" required>
+                {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Тип вопроса:</label>
+            <select name="question_type" id="question_type" required onchange="toggleOptions()">
+                <option value="single">Один вариант</option>
+                <option value="multiple">Несколько вариантов</option>
+                <option value="open">Развернутый ответ</option>
+            </select>
+
+            <div id="options_block">
+                <label>Варианты ответа:</label>
+                <div id="options_list"></div>
+                <button type="button" class="button" onclick="addOption()">Добавить вариант</button>
+            </div>
+
+            <div id="points_block">
+                <label>Баллы за вопрос:</label>
+                <input type="number" name="points" value="1" min="1" required>
+            </div>
+
+            <button type="submit" class="button">Сохранить вопрос</button>
+        </form>
+        <a href="{% url 'employer_dashboard' %}" class="button" style="background:#6c757d;">Назад</a>
+    </div>
+    <script>
+        // Показывать/скрывать варианты в зависимости от типа вопроса
+        function toggleOptions() {
+            const qType = document.getElementById('question_type').value;
+            document.getElementById('options_block').style.display = (qType === 'open') ? 'none' : 'block';
+        }
+        toggleOptions();
+
+        let optionCount = 0;
+        function addOption(text='', checked=false) {
+            const qType = document.getElementById('question_type').value;
+            const optionsList = document.getElementById('options_list');
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'options[]';
+            input.placeholder = 'Вариант ответа';
+            input.required = true;
+            input.value = text;
+            row.appendChild(input);
+
+            let check = document.createElement('input');
+            check.type = (qType === 'multiple') ? 'checkbox' : 'radio';
+            check.name = (qType === 'multiple') ? 'is_correct[]' : 'is_correct';
+            check.value = optionCount;
+            if (checked) check.checked = true;
+            row.appendChild(check);
+
+            let remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'remove-btn';
+            remove.innerText = '✖';
+            remove.onclick = function() { row.remove(); };
+            row.appendChild(remove);
+
+            optionsList.appendChild(row);
+            optionCount++;
+        }
+
+        document.getElementById('question_type').addEventListener('change', function() {
+            document.getElementById('options_list').innerHTML = '';
+            if (this.value !== 'open') {
+                addOption();
+                addOption();
+            }
+        });
+
+        // По умолчанию два варианта для выбора
+        if (document.getElementById('question_type').value !== 'open') {
+            addOption();
+            addOption();
+        }
+
+        document.getElementById('questionForm').onsubmit = function(e) {
+            e.preventDefault();
+            const qType = document.getElementById('question_type').value;
+            let data = {
+                text: this.text.value,
+                time_per_question: this.time_per_question.value,
+                category: this.category.value,
+                question_type: qType,
+                points: this.points.value,
+                options: []
+            };
+            if (qType !== 'open') {
+                const options = this.querySelectorAll('input[name="options[]"]');
+                let is_correct;
+                if (qType === 'multiple') {
+                    is_correct = this.querySelectorAll('input[type="checkbox"][name="is_correct[]"]');
+                } else {
+                    is_correct = this.querySelectorAll('input[type="radio"][name="is_correct"]');
+                }
+                for (let i = 0; i < options.length; i++) {
+                    let correct = (qType === 'multiple') ? is_correct[i].checked : is_correct[i].checked;
+                    data.options.push([options[i].value, correct]);
+                }
+            }
+            fetch(`{% url 'create_question' test.id %}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify(data)
+            }).then(response => response.json()).then(data => {
+                alert(data.status === 'success' ? 'Вопрос сохранён!' : 'Ошибка!');
+                if (data.status === 'success') location.href = "{% url 'employer_dashboard' %}";
+            });
+        };
+    </script>
+</body>
+</html>

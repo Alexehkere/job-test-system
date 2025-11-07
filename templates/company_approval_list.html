@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Одобрение компаний</title>
+</head>
+<body>
+    <h1>Компании, ожидающие одобрения</h1>
+    {% if companies %}
+        <ul>
+            {% for company in companies %}
+                <li>
+                    <strong>{{ company.name }}</strong> — {{ company.contact_email }}<br>
+                    {{ company.description|linebreaks }}<br>
+                    <form method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="company_id" value="{{ company.id }}">
+                        <button type="submit" name="action" value="approve">Одобрить</button>
+                        <button type="submit" name="action" value="reject">Отклонить</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Нет компаний, ожидающих одобрения.</p>
+    {% endif %}
+</body>
+</html>
